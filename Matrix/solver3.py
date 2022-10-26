@@ -14,7 +14,9 @@ rank = comm.Get_rank()
 stop = [False]
 
 
-def m_generate(rows, cols, parts_count=None, part=None):
+def solve(row_sums, col_sums, checksum, parts_count=None, part=None):
+    rows = len(row_sums)
+    cols = len(col_sums)
     bits_len = rows * cols
     bits = np.arange(0, bits_len)
     bits.fill(0)
@@ -30,12 +32,21 @@ def m_generate(rows, cols, parts_count=None, part=None):
     possibilities_count = 2 ** end_bit
     # print(rank, bits_len, end_bit, possibilities_count)
     for i in range(possibilities_count):
-        #print(rank, bits)
+        # print(rank, bits)
         if stop[0]:
             return
         # TODO: instead of flip(rot90()) calculate the whole thing in reverse, flip and rot90 might be expensive to do
-        m = np.flip(np.rot90(np.reshape(bits, (cols, rows))))
-        yield m
+        matrix = np.flip(np.rot90(np.reshape(bits, (cols, rows))))
+        invalid = False
+        for row in range(rows):
+            if matrix[row].sum() != row_sums[row]:
+                invalid = True
+        if not invalid:
+            for col in range(cols):
+                if matrix[:, col].sum() != col_sums[col]:
+                    invalid = True
+        if not invalid and m_hash(np.matrix(matrix)) == checksum:
+            return matrix
         if i < possibilities_count - 1:
             index = 0
             bits[index] += 1
@@ -43,26 +54,6 @@ def m_generate(rows, cols, parts_count=None, part=None):
                 bits[index] = 0
                 index += 1
                 bits[index] += 1
-
-
-def m_filter(row_sums, col_sums, matrices):
-    for matrix in matrices:
-        invalid = False
-        for row in range(0, len(row_sums)):
-            if matrix[row].sum() != row_sums[row]:
-                invalid = True
-        if not invalid:
-            for col in range(0, len(col_sums)):
-                if matrix[:, col].sum() != col_sums[col]:
-                    invalid = True
-        if not invalid:
-            yield matrix
-
-
-def m_solve(checksum, matrices):
-    for matrix in matrices:
-        if m_hash(np.matrix(matrix)) == checksum:
-            return matrix
     return None
 
 
@@ -83,34 +74,30 @@ def main():
         handle = comm.irecv(tag=TAG_DONE)
         while not stop[0]:
             if handle.Test():
-                #print(rank, "received stop signal")
+                # print(rank, "received stop signal")
                 stop[0] = True
 
     t = Thread(target=listen)
     t.daemon = True
     t.start()
 
-    result = m_solve(
+    result = solve(
+        rows_sums,
+        col_sums,
         matrix_hash,
-        m_filter(
-            rows_sums,
-            col_sums,
-            m_generate(
-                len(rows_sums),
-                len(col_sums),
-                size,
-                rank
-            )
-        )
+        size,
+        rank,
     )
     if result is not None:
-        print(rank, result)
+        #print(rank, result)
+        print(result)
         for i in range(size):
             if i == rank:
                 continue
-            #print(rank, "send exit to", i)
+            # print(rank, "send exit to", i)
             comm.send(obj=True, dest=i, tag=TAG_DONE)
     stop[0] = True
 
+
 main()
-#print(rank, "program done", flush=True)
+# print(rank, "program done", flush=True)
