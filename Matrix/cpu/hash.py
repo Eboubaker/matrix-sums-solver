@@ -3,7 +3,7 @@ from sys import argv
 
 import numpy as np
 
-from lib_gpu import m_hash
+from lib import m_hash
 # matrix rows cols => hash
 print(m_hash(
     np.array(

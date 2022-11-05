@@ -1,39 +1,45 @@
+import threading
+import time
 from math import log
-from threading import Thread
 
 import numpy as np
 from mpi4py import MPI
 from numba import jit
+from timeit import default_timer as timer
 
 from conf import TAG_DONE
-from lib_gpu import m_hash
+from lib import m_hash
 
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
 
-stop = [False]
+stop = False
 
 
 @jit(target_backend='cuda')
 def m_solve(bits, possibilities_count, rows, cols, row_sums, col_sums, matrix_hash):
+    global stop
     # print(rank, bits_len, end_bit, possibilities_count)
     for i in range(possibilities_count):
+        if stop:
+            return
         # print(rank, bits)
-        # TODO: instead of flip(rot90()) calculate the whole thing in reverse, flip and rot90 might be expensive to do
-        matrix = np.flip(np.rot90(np.reshape(bits, (cols, rows))))
+        matrix = np.reshape(bits, (rows, cols))
         invalid = False
         for row in range(0, len(row_sums)):
             if matrix[row].sum() != row_sums[row]:
                 invalid = True
+                break
         if not invalid:
             for col in range(0, len(col_sums)):
                 if matrix[:, col].sum() != col_sums[col]:
                     invalid = True
+                    break
 
         if not invalid and matrix_hash == m_hash(matrix):
             return matrix
-        #print(m_hash(matrix), bits)
+        # print(m_hash(matrix), bits)
         if i < possibilities_count - 1:
             index = 0
             bits[index] += 1
@@ -44,7 +50,7 @@ def m_solve(bits, possibilities_count, rows, cols, row_sums, col_sums, matrix_ha
 
 
 def main():
-    from solver_parser_gpu import rows_sums, col_sums, matrix_hash, seed
+    from parser import rows_sums, col_sums, matrix_hash, seed
     if rank == 0:
         print("solving for row_sums({}) col_sums({}) hash({}) seed({})".format(rows_sums, col_sums, matrix_hash, seed))
     if log(size, 2) != int(log(size, 2)):
@@ -56,15 +62,17 @@ def main():
               f"matrix size or reduce number of processors", flush=True)
         comm.Abort(-1)
 
-    def listen():
-        handle = comm.irecv(tag=TAG_DONE)
-        while not stop[0]:
-            if handle.Test():
-                # print(rank, "received stop signal")
-                stop[0] = True
-
     if size > 1:
-        t = Thread(target=listen)
+        def listen():
+            global stop
+            handle = comm.irecv(tag=TAG_DONE)
+            while not stop:
+                if handle.Test():
+                    # print(rank, "received stop signal")
+                    stop = True
+                time.sleep(.2)
+
+        t = threading.Thread(target=listen)
         t.daemon = True
         t.start()
 
@@ -81,7 +89,7 @@ def main():
                 bits[index] = 1
             shift += 1
     possibilities_count = 2 ** end_bit
-
+    start = timer()
     result = m_solve(
         bits,
         possibilities_count,
@@ -92,14 +100,15 @@ def main():
         int(matrix_hash)
     )
     if result is not None:
-        print(rank, result)
+        print(f"rank {rank} solved in {timer() - start}s")
+        print(result)
         if size > 1:
             for i in range(size):
                 if i == rank:
                     continue
                 # print(rank, "send exit to", i)
                 comm.send(obj=True, dest=i, tag=TAG_DONE)
-    stop[0] = True
+    stop = True
 
 
 main()

@@ -3,7 +3,7 @@ from sys import argv
 
 import numpy as np
 
-from lib_gpu import m_hash
+from lib import m_hash
 
 seed = int(argv[3]) if len(argv) > 3 else random.randint(0, 2_000_000)
 with_hash = True
