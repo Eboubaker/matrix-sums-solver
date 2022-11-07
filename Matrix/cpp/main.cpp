@@ -10,7 +10,7 @@
 #include "utils.h"
 
 //#define D_solve 0
-t_cell ***solve(t_cell_sum *row_sums, t_cell_sum *cols_sums, int nb_rows, int nb_cols, const unsigned char *hash, int part, int parts_count)
+t_cell *solve(t_cell_sum *row_sums, t_cell_sum *cols_sums, int nb_rows, int nb_cols, const unsigned char *hash, int part, int parts_count)
 {
     size_t bits_len = nb_cols * nb_rows;
     if (parts_count > bits_len)
@@ -18,10 +18,10 @@ t_cell ***solve(t_cell_sum *row_sums, t_cell_sum *cols_sums, int nb_rows, int nb
         std::cerr << "parts_count > bits_len" << std::endl;
         exit(1);
     }
-    t_cell bits[bits_len] = {0};
+    t_cell* bits = mtrx_mk(bits_len);
+    mtrx_rearrange(bits, new t_cell[bits_len]{0}, bits_len);// fill(0)
     size_t i = 0;
     int index;
-    t_cell ***m = mtrx_mk(nb_rows, nb_cols);
     bool valid;
     t_cell_sum *rsums, *csums;
     int end_bit = bits_len;
@@ -46,12 +46,11 @@ t_cell ***solve(t_cell_sum *row_sums, t_cell_sum *cols_sums, int nb_rows, int nb
     {
         // std::cout << getpid() << " " << int_lst_str(bits, bits_len) << std::endl;
         valid = true;
-        mtrx_rearrange(m, bits, nb_rows, nb_cols);
 #ifdef D_solve
         std::cout << mtrx_str(m, nb_rows, nb_cols) << std::endl;
 #endif
-        rsums = mtrx_sum_rows(m, nb_rows, nb_cols);
-        csums = mtrx_sum_cols(m, nb_rows, nb_cols);
+        rsums = mtrx_sum_rows(bits, nb_rows, nb_cols);
+        csums = mtrx_sum_cols(bits, nb_rows, nb_cols);
 #ifdef D_solve
         std::cout << "rows:" << int_lst_str(rsums, nb_rows) << std::endl;
         std::cout << "cols:" << int_lst_str(csums, nb_cols) << std::endl;
@@ -77,13 +76,13 @@ t_cell ***solve(t_cell_sum *row_sums, t_cell_sum *cols_sums, int nb_rows, int nb
 #ifdef D_solve
         std::cout << "v: " << valid << std::endl;
 #endif
-        if (valid && hash_eq(mtrx_md5dgst(m, nb_rows, nb_cols), hash, MD5_DIGEST_LENGTH))
+        if (valid && hash_eq(mtrx_md5dgst(bits, bits_len), hash, MD5_DIGEST_LENGTH))
         {
 #ifdef D_solve
             std::cout << "Solve: " << m << ":" << mtrx_str(m, nb_rows, nb_cols) << std::endl;
 #endif
-            t_cell ***r = mtrx_clone(m, nb_rows, nb_cols);
-            mtrx_free(m, nb_rows, nb_cols);
+            t_cell *r = mtrx_clone(bits, bits_len);
+            free(bits);
             return r;
         }
 #ifdef D_solve
@@ -106,15 +105,15 @@ t_cell ***solve(t_cell_sum *row_sums, t_cell_sum *cols_sums, int nb_rows, int nb
 
 int main()
 {
-    srand(4);
-    int nb_rows = 5;
-    int nb_cols = 5;
+    srand(time(0));
+    int nb_rows = 3;
+    int nb_cols = 3;
     // srand(4);
-    t_cell ***m = mtrx_mk(nb_rows, nb_cols);
-    mtrx_rnd(m, nb_rows, nb_cols);
+    t_cell *m = mtrx_mk(nb_rows * nb_cols);
+    mtrx_rnd(m, nb_rows * nb_cols);
     std::cout << mtrx_str(m, nb_rows, nb_cols) << std::endl;
     int processes = std::min(32, (int)powl(2, (int)log2(nb_cols * nb_rows)));
-    std::cout << "forking " << processes << " processes" << std::endl;
+    std::cout << "forking " << processes << " processes on " << get_num_cores() << " processors" << std::endl;
     // for (size_t i = 0; i < processes; i++)
     // {
     // int pipefd[2] = {0};
@@ -175,13 +174,13 @@ int main()
         }
         // std::cout << "rank " << rank << " works on " << rank << std::endl;
         auto start = std::chrono::high_resolution_clock::now();
-        t_cell ***s = solve(mtrx_sum_rows(m, nb_rows, nb_cols), mtrx_sum_cols(m, nb_rows, nb_cols), nb_rows, nb_cols, mtrx_md5dgst(m, nb_rows, nb_cols), rank, processes);
+        t_cell *s = solve(mtrx_sum_rows(m, nb_rows, nb_cols), mtrx_sum_cols(m, nb_rows, nb_cols), nb_rows, nb_cols, mtrx_md5dgst(m, nb_rows * nb_cols), rank, processes);
         auto stop = std::chrono::high_resolution_clock::now();
         auto duration = (float)std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count() / 1000000.0F;
 
         if (s)
         {
-            std::cout << "rank " << rank << " solved in " << duration << "s" << std::endl
+            std::cout << "rank " << rank << " solved in " << std::fixed << duration << "s" << std::endl
                       << mtrx_str(s, nb_rows, nb_cols) << std::endl;
             for (size_t i = 0; i < processes; i++)
             {
