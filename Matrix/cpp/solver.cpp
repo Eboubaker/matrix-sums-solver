@@ -85,7 +85,7 @@ int main(int argc, char **argv)
     std::vector<std::string> args;
     args.push_back(std::string(argv[0]));
     std::string input;
-    if (std::getline(std::cin, input))
+    if (!isatty(STDIN_FILENO) && std::getline(std::cin, input))
     {
         auto vec = split(input, " ");
 
@@ -128,8 +128,11 @@ int main(int argc, char **argv)
 
         col_sums[i] = std::stoi(strcols[i]);
     }
-
-    int seed = std::stoi(args[4]);
+    int seed = 0;
+    if (args.size() > 4)
+    {
+        seed = std::stoi(args[4]);
+    }
     std::cout << "solving input "
               << int_lst_str(row_sums, nb_rows) << " "
               << int_lst_str(col_sums, nb_cols) << " "
