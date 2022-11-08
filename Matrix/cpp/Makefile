@@ -1,18 +1,33 @@
-# the compiler: gcc for C program, define as g++ for C++
-CC = g++
+CC=g++
+INCDIRS=-I.
+OPT=-O0
+CFLAGS=-Wall -Wextra -g $(INCDIRS) $(OPT)
 
-# compiler flags:
-#  -g     - this flag adds debugging information to the executable file
-#  -Wall  - this flag is used to turn on most compiler warnings
-CFLAGS  = -pedantic -Wall -Wextra -Wcast-align -Wcast-qual -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self -Wlogical-op -Wmissing-declarations -Wmissing-include-dirs -Wnoexcept -Wold-style-cast -Woverloaded-virtual -Wredundant-decls -Wshadow -Wsign-conversion -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 -Wswitch-default -Wundef -Werror -Wno-unused
+CFILES=mtrx_funcs.cpp utils.cpp
+OBJECTS=mtrx_funcs.o utils.o
 
-# The build target 
-TARGET = main
+S_CFILES=solver.cpp $(CFILES)
+S_OBJECTS=solver.o $(OBJECTS)
 
-all: $(TARGET)
+S_BINARY=solver
 
-	$(TARGET): $(TARGET).c
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c
+G_CFILES=generator.cpp $(CFILES)
+G_OBJECTS=generator.o $(OBJECTS)
+
+G_BINARY=generator
+
+all: $(S_BINARY) $(G_BINARY)
+
+
+$(S_BINARY): $(S_OBJECTS)
+	$(CC) -o  $@ $^ -lcrypto
+
+$(G_BINARY): $(G_OBJECTS)
+	$(CC) -o  $@ $^ -lcrypto
+
+# regular expression where % is a wildcard
+%.o:%.c
+	$(CC) $(CFLAGS) -c -o $@ $^ -lcrypto
 
 clean:
-	$(RM) $(TARGET)
+	rm -rf $(S_BINARY) $(G_BINARY) *.o

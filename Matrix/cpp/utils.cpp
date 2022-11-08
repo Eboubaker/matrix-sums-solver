@@ -1,7 +1,3 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <iostream>
-#include <sstream>
 #include "utils.h"
 
 #ifdef _WIN32
@@ -24,7 +20,7 @@ std::string int_lst_str(int *ints, size_t size)
 {
     std::stringstream ss;
     ss << "[";
-    for (int i = 0; i < size; i++)
+    for (size_t i = 0; i < size; i++)
     {
         if (i != 0)
         {
@@ -73,4 +69,59 @@ int get_num_cores()
 #else
     return sysconf(_SC_NPROCESSORS_ONLN);
 #endif
+}
+
+std::string dgsttohex(const unsigned char *dgst, size_t size){
+    char hexstr[size*size];
+    size_t i;
+    for (i = 0; i < size; i++)
+    {
+        sprintf(hexstr + i * 2, "%02x", dgst[i]);
+    }
+    hexstr[i * 2] = 0;
+    return std::string(hexstr);
+}
+unsigned char char2int(char input)
+{
+    if (input >= '0' && input <= '9')
+        return input - '0';
+    if (input >= 'A' && input <= 'F')
+        return input - 'A' + 10;
+    if (input >= 'a' && input <= 'f')
+        return input - 'a' + 10;
+    throw std::invalid_argument("Invalid input string");
+}
+
+void hextodgst(const char *src, unsigned char *target)
+{
+    while (*src && src[1])
+    {
+        *(target++) = char2int(*src) * 16 + char2int(src[1]);
+        src += 2;
+    }
+}
+
+std::vector<std::string> split(std::string s, std::string delimiter)
+{
+    size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+    std::string token;
+    std::vector<std::string> res;
+
+    while ((pos_end = s.find(delimiter, pos_start)) != std::string::npos)
+    {
+        token = s.substr(pos_start, pos_end - pos_start);
+        pos_start = pos_end + delim_len;
+        res.push_back(token);
+    }
+
+    res.push_back(s.substr(pos_start));
+    return res;
+}
+
+uint32_t millis()
+{
+    using namespace std::chrono;
+    return static_cast<uint32_t>(duration_cast<milliseconds>(
+                                     system_clock::now().time_since_epoch())
+                                     .count());
 }
