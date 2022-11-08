@@ -16,13 +16,19 @@ G_OBJECTS=generator.o $(OBJECTS)
 
 G_BINARY=generator
 
-all: $(S_BINARY) $(G_BINARY)
+H_OBJECTS=hash.o $(OBJECTS)
 
+H_BINARY=hash
+
+all: $(S_BINARY) $(G_BINARY) $(H_BINARY)
 
 $(S_BINARY): $(S_OBJECTS)
 	$(CC) -o  $@ $^ -lcrypto
 
 $(G_BINARY): $(G_OBJECTS)
+	$(CC) -o  $@ $^ -lcrypto
+
+$(H_BINARY): $(H_OBJECTS)
 	$(CC) -o  $@ $^ -lcrypto
 
 # regular expression where % is a wildcard
