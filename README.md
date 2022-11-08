@@ -1,4 +1,3 @@
-```
-$ python generator.py 3 3 | mpirun python solver.py
-```
-cpp version is faster by 20 times
+py  version will solve 5x5 matrix in ~220seconds.
+cpp version will solve 5x5 matrix in less than 5 seconds.
+(tested on my laptop).
