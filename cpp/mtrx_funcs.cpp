@@ -133,7 +133,7 @@ t_cell_sum *mtrx_sum_rows(t_cell *m, int nb_rows, int nb_cols)
 
 t_cell_sum *mtrx_sum_cols(t_cell *m, int nb_rows, int nb_cols)
 {
-    t_cell_sum *sums = (t_cell_sum *)malloc(sizeof(t_cell_sum) * nb_rows);
+    t_cell_sum *sums = (t_cell_sum *)malloc(sizeof(t_cell_sum) * nb_cols);
     for (int col = 0; col < nb_cols; col++)
     {
         sums[col] = mtrx_sum_col(m, col, nb_rows, nb_cols);
