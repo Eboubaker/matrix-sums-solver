@@ -5,7 +5,7 @@ from sys import argv, stdin
 import numpy as np
 import select
 
-from conf import TAG_ARGS
+TAG_ARGS=2
 
 from mpi4py import MPI
 comm = MPI.COMM_WORLD

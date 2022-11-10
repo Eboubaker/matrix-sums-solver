@@ -8,12 +8,12 @@ import numpy as np
 from mpi4py import MPI
 
 from conf import TAG_DONE
+from lib import m_hash
 
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
 stop = threading.Event()
-
 
 def solve(row_sums, col_sums, checksum, parts_count=None, part=None):
     rows = len(row_sums)
@@ -35,19 +35,27 @@ def solve(row_sums, col_sums, checksum, parts_count=None, part=None):
     # print(rank, bits_len, end_bit, pc)
     for i in range(pc):
         # print(rank, bits)
-        matrix = np.reshape(bits, (rows, cols))
+        if stop.is_set():
+            break
         invalid = False
         for row in range(rows):
-            if matrix[row].sum() != row_sums[row]:
+            rsum = 0
+            shift = row * cols
+            for col in range(cols):
+                rsum += bits[col + shift]
+            if rsum != row_sums[row]:
                 invalid = True
                 break
         if not invalid:
             for col in range(cols):
-                if matrix[:, col].sum() != col_sums[col]:
+                csum = 0
+                for row in range(rows):
+                    csum += bits[col + row * cols]
+                if csum != col_sums[col]:
                     invalid = True
                     break
-        if not invalid and hashlib.md5(matrix).hexdigest() == checksum:
-            return matrix
+        if not invalid and m_hash(bits) == checksum:
+            return np.reshape(bits, (rows, cols))
         if i < pc - 1:
             index = 0
             bits[index] += 1
@@ -78,7 +86,8 @@ def main():
                 if handle.Test():
                     # print(rank, "received stop signal")
                     stop.set()
-                time.sleep(.2)
+                else:
+                    time.sleep(.2)
         t = threading.Thread(target=listen)
         t.daemon = True
         t.start()
@@ -94,6 +103,7 @@ def main():
     if result is not None:
         print(f"rank {rank} solved in {timer() - start}s")
         print(result)
+        np.zeros()
         for i in range(size):
             if i == rank:
                 continue

@@ -8,11 +8,9 @@ t_cell *solve(t_cell_sum *row_sums, t_cell_sum *cols_sums, int nb_rows, int nb_c
         std::cerr << "parts_count > bits_len" << std::endl;
         exit(1);
     }
-    t_cell bits[bits_len] = {0};
-
+    t_cell *bits = (t_cell *)malloc(sizeof(t_cell) * bits_len);
+    memset(bits, 0, sizeof(t_cell) * bits_len);
     int index;
-    bool valid;
-    t_cell_sum *rsums, *csums;
     int end_bit = bits_len;
     if (part >= parts_count)
     {
@@ -22,49 +20,36 @@ t_cell *solve(t_cell_sum *row_sums, t_cell_sum *cols_sums, int nb_rows, int nb_c
     size_t mask_len = log2(parts_count);
     end_bit = bits_len - mask_len;
     int shift = 0;
-    for (size_t bi = end_bit; bi < (size_t)bits_len; bi++)
+    for (size_t bi = end_bit; bi < (size_t)bits_len; bi++, shift++)
     {
         if ((part >> shift) & 1)
         {
             bits[bi] = 1;
         }
-        shift++;
     }
     size_t i = 0;
     size_t max = powl(2, end_bit);
     while (i < max)
     {
-        valid = true;
-        rsums = mtrx_sum_rows(bits, nb_rows, nb_cols);
-        csums = mtrx_sum_cols(bits, nb_rows, nb_cols);
-#ifdef D_solve
-        std::cout << "rows: " << int_lst_str(rsums, nb_rows) << " cols: " << int_lst_str(csums, nb_cols) << " " ;
-#endif
         for (int row = 0; row < nb_rows; row++)
         {
-            if (rsums[row] != row_sums[row])
+            if (mtrx_sum_row(bits, row, nb_cols) != row_sums[row])
             {
-                valid = false;
-                break;
+                goto increment;
             }
         }
         for (int col = 0; col < nb_cols; col++)
         {
-            if (csums[col] != cols_sums[col])
+            if (mtrx_sum_col(bits, col, nb_rows, nb_cols) != cols_sums[col])
             {
-                valid = false;
-                break;
+                goto increment;
             }
         }
-        free(rsums);
-        free(csums);
-#ifdef D_solve
-        std::cout << part << " " << int_lst_str(bits, bits_len) << " " << dgsttohex(mtrx_md5dgst(bits, bits_len), MD5_DIGEST_LENGTH) << " " << valid << std::endl;
-#endif
-        if (valid && hash_eq(mtrx_md5dgst(bits, bits_len), hash, MD5_DIGEST_LENGTH))
+        if (hash_eq(mtrx_md5dgst(bits, bits_len), hash, MD5_DIGEST_LENGTH))
         {
-            return mtrx_clone(bits, bits_len);
+            return bits;
         }
+    increment:
         if (i < max)
         {
             index = 0;
@@ -139,7 +124,7 @@ int main(int argc, char **argv)
               << dgsttohex(hextdgst, MD5_DIGEST_LENGTH) << " "
               << seed
               << std::endl;
-    int processes = std::min(32, (int)powl(2, (int)log2(nb_cols * nb_rows)));
+    int processes = std::min(std::max(16, get_num_cores()), (int)powl(2, (int)log2(nb_cols * nb_rows)));
     std::cout << "forking " << processes << " processes on " << get_num_cores() << " processors" << std::endl;
     pid_t workers[processes];
     int channels[processes][2];
