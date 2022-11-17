@@ -3,9 +3,9 @@ from sys import argv
 
 import numpy as np
 
-from lib import m_hash
+from lib import m_hash_hex
 # matrix rows cols => hash
-print(m_hash(
+print(m_hash_hex(
     np.array(
         [
             np.fromstring(x[0], dtype=int, sep=',')

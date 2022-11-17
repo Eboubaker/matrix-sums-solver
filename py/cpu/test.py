@@ -1,3 +1,5 @@
+import hashlib
+
 import numpy as np
 
 from mpi4py import MPI
@@ -63,6 +65,10 @@ x x x x x 1
 x x x x x 2
 x x x x x 2
 """
-for m in generate(row_sums=np.array([2, 3, 2, 1, 2]), col_sums=np.array([2, 3, 1, 2, 2])):
-    print(m)
-    print("*****")
+# for m in generate(row_sums=np.array([2, 3, 2, 1, 2]), col_sums=np.array([2, 3, 1, 2, 2])):
+#     print(m)
+#     print("*****")
+
+x = np.ndarray([1])
+
+print(hashlib.md5(x).digest(), bytes.fromhex(hashlib.md5(x).hexdigest()))

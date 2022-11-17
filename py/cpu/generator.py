@@ -3,7 +3,7 @@ from sys import argv
 
 import numpy as np
 
-from lib import m_hash
+from lib import m_hash_hex
 
 seed = int(argv[3]) if len(argv) > 3 else random.randint(0, 2_000_000)
 with_hash = True
@@ -20,6 +20,6 @@ rows_sums = '[' + ','.join(str(e) for e in matrix.sum(1).flatten().tolist()) + '
 if len(argv) > 4:
     print(matrix)
 if with_hash:
-    print(rows_sums, cols_sums, m_hash(matrix), seed)
+    print(rows_sums, cols_sums, m_hash_hex(matrix), seed)
 else:
     print(rows_sums, cols_sums)
