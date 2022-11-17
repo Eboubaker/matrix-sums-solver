@@ -1,17 +1,18 @@
 import os
 import re
+import time
 from sys import argv, stdin
 
 import numpy as np
 import select
 
-TAG_ARGS=2
+TAG_ARGS = 2
 
 from mpi4py import MPI
+
 comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
-
 
 def arg_parse_panic(msg):
     """"
@@ -61,6 +62,7 @@ else:
     else:
         # rank 0 will send args after validation
         data = comm.recv(source=0, tag=TAG_ARGS)
+        # print(rank, "recivied args", data)
         if isinstance(data['argv'], str):
             exit(0)  # rank 0 showed the message we just exit
         else:
@@ -94,4 +96,5 @@ if rank == 0:
 if rank == 0 and size > 1:
     send = {'argv': argv}
     for i in range(1, size):
-        comm.isend(send, dest=i, tag=TAG_ARGS)
+        # print(rank, "sending args", send, "to", i)
+        comm.send(send, dest=i, tag=TAG_ARGS)
