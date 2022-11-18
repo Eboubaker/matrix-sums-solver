@@ -1,4 +1,4 @@
-
+#include <string>
 #include "openssl/md5.h"
 
 typedef int t_cell;

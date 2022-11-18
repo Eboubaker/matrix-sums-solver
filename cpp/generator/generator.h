@@ -6,6 +6,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <math.h>
-#include "mtrx_funcs.h"
-#include "utils.h"
+#include "../include/mtrx_funcs.h"
+#include "../include/utils.h"
 #include <string>

@@ -21,3 +21,5 @@ bool exists(int n, int *ints, size_t size);
 std::string int_lst_str(int *ints, size_t size);
 std::vector<std::string> split(std::string s, std::string delimiter);
 uint32_t millis();
+int idxtorow(int index, int nb_cols);
+int idxtocol(int index, int nb_cols);

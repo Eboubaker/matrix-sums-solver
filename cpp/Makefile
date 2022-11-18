@@ -1,39 +1,28 @@
-CC=g++
-INCDIRS=-I.
-OPT=-O0
-CFLAGS=-Wall -Wextra -g $(INCDIRS) $(OPT)
+SUBDIRS=solver generator hash test
 
-CFILES=mtrx_funcs.cpp utils.cpp
-OBJECTS=mtrx_funcs.o utils.o
+define FOREACH
+    for DIR in $(SUBDIRS); do \
+        $(MAKE) -C $$DIR $(1); \
+    done
+endef
 
-S_CFILES=solver.cpp $(CFILES)
-S_OBJECTS=solver.o $(OBJECTS)
+all: $(SUBDIRS)
 
-S_BINARY=solver
-
-G_CFILES=generator.cpp $(CFILES)
-G_OBJECTS=generator.o $(OBJECTS)
-
-G_BINARY=generator
-
-H_OBJECTS=hash.o $(OBJECTS)
-
-H_BINARY=hash
-
-all: $(S_BINARY) $(G_BINARY) $(H_BINARY)
-
-$(S_BINARY): $(S_OBJECTS)
-	$(CC) -o  $@ $^ -lcrypto
-
-$(G_BINARY): $(G_OBJECTS)
-	$(CC) -o  $@ $^ -lcrypto
-
-$(H_BINARY): $(H_OBJECTS)
-	$(CC) -o  $@ $^ -lcrypto
-
-# regular expression where % is a wildcard
-%.o:%.c
-	$(CC) $(CFLAGS) -c -o $@ $^ -lcrypto
+$(SUBDIRS):
+	$(MAKE) -C $@
 
 clean:
-	rm -rf $(S_BINARY) $(G_BINARY) *.o
+	$(call FOREACH,clean)
+
+# shell commands are a set of keystrokes away
+distribute: clean
+	tar zcvf dist.tgz *
+
+# @ silences the printing of the command
+# $(info ...) prints output
+diff:
+	$(info The status of the repository, and the volume of per-file changes:)
+	@git status
+	@git diff --stat
+
+.PHONY: all $(SUBDIRS)

@@ -19,9 +19,9 @@ def arg_parse_panic(msg):
 
 
 def parse_sums(sums_as_str):
-    match = re.fullmatch(r"\[(\d(,\d)*?)]", sums_as_str)
+    match = re.fullmatch(r"\[(\d+(,\d)*?)]", sums_as_str)
     if match:
-        return np.fromstring(match.groups()[0], dtype=int, sep=',')
+        return np.fromstring(match.groups()[0], dtype=int, sep=',').ravel()
     return None
 
 

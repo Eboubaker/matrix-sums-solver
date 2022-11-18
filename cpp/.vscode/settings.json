@@ -50,6 +50,8 @@
         "chrono": "cpp",
         "ratio": "cpp",
         "iomanip": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "condition_variable": "cpp",
+        "mutex": "cpp"
     }
 }

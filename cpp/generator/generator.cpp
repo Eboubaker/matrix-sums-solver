@@ -4,7 +4,7 @@ int main(int argc, char **argv)
     uint32_t seed;
     if (argc > 3)
     {
-        seed = std::stoi(argv[3]);
+        seed = std::stol(argv[3]);
     }
     else
     {

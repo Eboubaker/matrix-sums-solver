@@ -125,3 +125,11 @@ uint32_t millis()
                                      system_clock::now().time_since_epoch())
                                      .count());
 }
+
+int idxtorow(int index, int nb_cols){
+    return index / nb_cols;
+}
+int idxtocol(int index, int nb_cols)
+{
+    return index % nb_cols;
+}
