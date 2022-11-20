@@ -4,14 +4,13 @@ import traceback
 from timeit import default_timer as timer
 from typing import Optional
 
-start = timer()
 import numpy as np
 
 from lib import m_hash_digest
 
-pid = multiprocessing.process.current_process().pid
+start = timer()
 
-work_buffer = 0
+pid = multiprocessing.process.current_process().pid
 
 
 def solve_recursive(q: Optional[multiprocessing.Queue], nb_rows: int, nb_cols: int, matrix: np.ndarray, srow: int, scol: int, row_sums: np.ndarray, col_sums: np.ndarray, hashdigest: bytes):
@@ -19,12 +18,15 @@ def solve_recursive(q: Optional[multiprocessing.Queue], nb_rows: int, nb_cols: i
     for row in range(srow, nb_rows):
         for col in range(scol, nb_cols):
             if row_sums[row] == 0 or col_sums[col] == 0 or (
-                    np.count_nonzero(col_sums[col:]) > row_sums[row]  # check next columns with non-zero sum in this cell row
-                    and np.count_nonzero(row_sums[row:]) > col_sums[col]  # check next rows with non-zero sum in this cell column
+                    # if next columns with non-zero sum in this cell's row is greater than remaining row sum
+                    # and next rows with non-zero sum in this cell's column is greater than remaining column sum
+                    # then we are allowed to put zero in this cell.
+                    np.count_nonzero(col_sums[col:]) > row_sums[row]
+                    and np.count_nonzero(row_sums[row:]) > col_sums[col]
             ):
                 # we can put zero in this cell [row,col]
                 # so we can leave it empty(default is zero)
-                if col_sums[col] != 0 and row_sums[row] != 0:
+                if col_sums[col] != 0 and row_sums[row] != 0:  # there is still remaining sums
                     # we also can add 1 in this cell [row, col]
                     # we will set this cell to 1 in a new copy and put the task in the queue,
                     # another process will continue generating and solving the next cells
@@ -41,7 +43,7 @@ def solve_recursive(q: Optional[multiprocessing.Queue], nb_rows: int, nb_cols: i
                         next_col = 0
                         next_row += 1
                     if q is not None and q.empty():
-                        # there are processes without work, or we made a lot of tasks recently, we will put this task in the queue
+                        # there are processes without work, we will put this task in the queue
                         # to be executed by another process
                         q.put((next_matrix, next_row, next_col, next_row_sums, next_col_sums))
                     else:
@@ -49,19 +51,19 @@ def solve_recursive(q: Optional[multiprocessing.Queue], nb_rows: int, nb_cols: i
                         if m is not None:
                             return m
             else:
-                # this cell must be set to 1
-                # set it to 1 and reduce 1 from row_sums and 1 from col_sums of this cell's [row,col]
+                # this cell must be set to 1, according to the sums there is no other posibility
+                # set it to 1 and reduce 1 from row_sums and 1 from col_sums of this cell's row and column
                 matrix[row, col] = 1
                 row_sums[row] -= 1
                 col_sums[col] -= 1
-        scol = 0  # reset starting column
+        scol = 0  # reset starting column of first iteration
 
     # print(pid, "checking", matrix)
     if m_hash_digest(matrix) == hashdigest:
         return matrix
 
 
-def parallel_solve(indx, queue: multiprocessing.Queue, exit_code: multiprocessing.Queue, rows, cols, hashdigest):
+def parallel_solve(indx: int, queue: multiprocessing.Queue, exit_code: multiprocessing.Queue, rows: int, cols: int, hashdigest: bytes):
     global start
     pstart = timer()
     while True:
@@ -86,9 +88,9 @@ def main():
     if rows_sums is None:
         return
     processes_count = os.cpu_count()
-    print("solving for row_sums({}) col_sums({}) hash({}) seed({})".format(rows_sums, col_sums, matrix_hash, seed))
-    if len(rows_sums) * len(col_sums) <= 49:
-        print(f"using main process(small matrix)")
+    print(f"solving for row_sums({rows_sums}) col_sums({col_sums}) hash({matrix_hash}) seed({seed})")
+    if len(rows_sums) * len(col_sums) <= 46:
+        # print(f"using main process(small matrix)")
         # creating and managing processes will be more time consuming than to solve this small matrix with 1 process
         start = timer()
         m = solve_recursive(
@@ -107,7 +109,7 @@ def main():
             print(m, flush=True)
         else:
             print("not solved, maybe invalid hash?")
-        exit(0)
+        return
     print(f"using {processes_count} processes")
     queue = multiprocessing.Queue()  # stores running process ids to be killed when a process finds the solution
     exit_code = multiprocessing.Queue()  # to send exit code to main process
@@ -129,7 +131,7 @@ def main():
             processes[i].kill()
         except:
             pass
-    print(f"controller process ended after {timer() - start}s (includes process spawning)")
+    print(f"controller process ended after {timer() - start}s")
 
 
 # print(f"process {pid} started")

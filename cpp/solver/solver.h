@@ -9,8 +9,10 @@
 #include <thread>
 #include <condition_variable>
 #include <mutex>
+#include <shared_mutex>
 #include <chrono>
 #include <queue>
+#include <atomic>
 #include "../include/mtrx_funcs.h"
 #include "../include/utils.h"
 t_cell *solve(t_cell *m, int size, int nb_rows, int nb_cols, int s, t_cell_sum *row_sums, t_cell_sum *col_sums, const unsigned char *hash);

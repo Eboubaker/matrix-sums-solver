@@ -7,12 +7,16 @@ comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
 print("rank", rank)
-def generate_recursive(matrix, srow, scol, row_sums, col_sums, static_row_sums, static_col_sums):
+def generate_recursive(matrix, srow, scol, row_sums, col_sums):
     for row in range(srow, len(row_sums)):
         for col in range(scol, len(col_sums)):
-            row_next_ones = np.count_nonzero(col_sums[col:])
-            col_next_ones = np.count_nonzero(row_sums[row:])
-            if row_sums[row] == 0 or col_sums[col] == 0 or (row_next_ones > row_sums[row] and col_next_ones > col_sums[col]):
+            if row_sums[row] == 0 or col_sums[col] == 0 or (
+                    # if next columns with non-zero sum in this cell's row is greater than remaining row sum
+                    # and next rows with non-zero sum in this cell's column is greater than remaining column sum
+                    # then we are allowed to put zero in this cell.
+                    np.count_nonzero(col_sums[col:]) > row_sums[row]
+                    and np.count_nonzero(row_sums[row:]) > col_sums[col]
+            ):
                 # we can put zero in this cell [row,col]
                 # so we can leave it empty
                 if col_sums[col] != 0 and row_sums[row] != 0:
@@ -40,14 +44,6 @@ def generate_recursive(matrix, srow, scol, row_sums, col_sums, static_row_sums, 
             else:
                 assert False, "undefined case(probably invalid sums)"  # should not happen
         scol = 0  # reset starting column
-
-    # check if generated matrix is valid and yield it
-    for row in range(len(static_row_sums)):
-        if matrix[row, :].sum() != static_row_sums[row]:
-            return  # not valid
-    for col in range(len(static_col_sums)):
-        if matrix[:, col].sum() != static_col_sums[col]:
-            return  # not valid
     yield matrix
 
 
@@ -65,10 +61,6 @@ x x x x x 1
 x x x x x 2
 x x x x x 2
 """
-# for m in generate(row_sums=np.array([2, 3, 2, 1, 2]), col_sums=np.array([2, 3, 1, 2, 2])):
-#     print(m)
-#     print("*****")
-
-x = np.ndarray([1])
-
-print(hashlib.md5(x).digest(), bytes.fromhex(hashlib.md5(x).hexdigest()))
+for m in generate(row_sums=np.array([2, 3, 2, 1, 2]), col_sums=np.array([2, 3, 1, 2, 2])):
+    print(m)
+    print("*****")

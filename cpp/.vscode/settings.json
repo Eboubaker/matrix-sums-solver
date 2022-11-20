@@ -52,6 +52,7 @@
         "iomanip": "cpp",
         "thread": "cpp",
         "condition_variable": "cpp",
-        "mutex": "cpp"
+        "mutex": "cpp",
+        "shared_mutex": "cpp"
     }
 }
