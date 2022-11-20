@@ -37,8 +37,8 @@ def solve_recursive(nb_rows: int, nb_cols: int, matrix: np.ndarray, srow: int, s
                 # so we can leave it empty(default is zero)
                 if col_sums[col] != 0 and row_sums[row] != 0:  # there is still remaining sums
                     # we also can add 1 in this cell [row, col]
-                    # we will set this cell to 1 in a new copy and put the task in the queue,
-                    # another process will continue generating and solving the next cells
+                    # we will set this cell to 1 in a new copy and send the task to another rank,
+                    # another rank will continue generating and solving the next cells
                     next_matrix = np.copy(matrix)
                     next_row_sums = np.copy(row_sums)
                     next_col_sums = np.copy(col_sums)
