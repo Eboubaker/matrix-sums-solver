@@ -1,19 +1,28 @@
-import multiprocessing
-import os
-import traceback
+import random
+import threading
+import time
 from timeit import default_timer as timer
-from typing import Optional
 
 import numpy as np
+from mpi4py import MPI
 
 from lib import m_hash_digest
 
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
 start = timer()
+other_ranks = [r for r in range(size) if r != rank]
 
-pid = multiprocessing.process.current_process().pid
+TAG_EXIT = 1
+TAG_TASK = 2
+stop = threading.Event()
+
+def random_rank():
+    return random.choice(other_ranks)
 
 
-def solve_recursive(q: Optional[multiprocessing.Queue], nb_rows: int, nb_cols: int, matrix: np.ndarray, srow: int, scol: int, row_sums: np.ndarray, col_sums: np.ndarray, hashdigest: bytes):
+def solve_recursive(nb_rows: int, nb_cols: int, matrix: np.ndarray, srow: int, scol: int, row_sums: np.ndarray, col_sums: np.ndarray, hashdigest: bytes):
     # print(f"{pid} recurse")
     for row in range(srow, nb_rows):
         for col in range(scol, nb_cols):
@@ -42,14 +51,9 @@ def solve_recursive(q: Optional[multiprocessing.Queue], nb_rows: int, nb_cols: i
                         # then start from next row
                         next_col = 0
                         next_row += 1
-                    if q is not None and q.empty():
-                        # there are processes without work, we will put this task in the queue
-                        # to be executed by another process
-                        q.put((next_matrix, next_row, next_col, next_row_sums, next_col_sums))
-                    else:
-                        m = solve_recursive(q, nb_rows, nb_cols, next_matrix, next_row, next_col, next_row_sums, next_col_sums, hashdigest)
-                        if m is not None:
-                            return m
+                    d = random_rank()
+                    # print(f"{rank} send to {d}")
+                    comm.send((next_matrix, next_row, next_col, next_row_sums, next_col_sums), dest=d, tag=TAG_TASK)
             else:
                 # this cell must be set to 1, according to the sums there is no other posibility
                 # set it to 1 and reduce 1 from row_sums and 1 from col_sums of this cell's row and column
@@ -63,78 +67,59 @@ def solve_recursive(q: Optional[multiprocessing.Queue], nb_rows: int, nb_cols: i
         return matrix
 
 
-def parallel_solve(indx: int, queue: multiprocessing.Queue, exit_code: multiprocessing.Queue, rows: int, cols: int, hashdigest: bytes):
+def parallel_solve(rows: int, cols: int, hashdigest: bytes):
     global start
-    pstart = timer()
     while True:
-        next_matrix, next_row, next_col, next_row_sums, next_col_sums = queue.get()
-        # print(f"{pid} got new task")
-        try:
-            matrix = solve_recursive(queue, rows, cols, next_matrix, next_row, next_col, next_row_sums, next_col_sums, hashdigest)
-        except:
-            print(f"error in process {pid}[{indx}], {traceback.format_exc()}", flush=True)
-            exit_code.put(1)
-            return
+        # print(f"{rank} wait task tag {TAG_TASK}", flush=True)
+        next_matrix, next_row, next_col, next_row_sums, next_col_sums = comm.recv(tag=TAG_TASK)
+        # print(f"{rank} got new task")
+        matrix = solve_recursive(rows, cols, next_matrix, next_row, next_col, next_row_sums, next_col_sums, hashdigest)
         if matrix is not None:
-            print(f"process {pid}[{indx}] solved after {timer() - pstart}s")
+            print(f"rank {rank} solved after {timer() - start}s")
             print(matrix, flush=True)
-            exit_code.put(0)
+            for r in other_ranks:
+                comm.send(True, dest=r, tag=TAG_EXIT)
+            stop.set()
             return
+
+def worker_thread(rows, cols, hexdigest):
+    global start
+    start = timer()
+    parallel_solve(rows, cols, hexdigest)
 
 
 def main():
-    global start
     from parser import rows_sums, col_sums, matrix_hash, seed
-    if rows_sums is None:
-        return
-    processes_count = os.cpu_count()
-    print(f"solving for row_sums({rows_sums}) col_sums({col_sums}) hash({matrix_hash}) seed({seed})")
-    if len(rows_sums) * len(col_sums) <= 46:
-        # print(f"using main process(small matrix)")
-        # creating and managing processes will be more time consuming than to solve this small matrix with 1 process
-        start = timer()
-        m = solve_recursive(
-            None,
-            len(rows_sums),
-            len(col_sums),
+    if rank == 0:
+        print(f"solving for row_sums({rows_sums}) col_sums({col_sums}) hash({matrix_hash}) seed({seed})", flush=True)
+        d = random_rank()
+        # print(f"{rank} send first to {d} tag {TAG_TASK}")
+        comm.send((
             np.zeros(shape=(len(rows_sums), len(col_sums)), dtype=int),  # initial matrix
             0,  # start from row 0
             0,  # and column 0
-            np.copy(rows_sums),
-            np.copy(col_sums),
-            bytes.fromhex(matrix_hash)
-        )
-        if m is not None:
-            print(f"process {pid}[main] solved after {timer() - start}s")
-            print(m, flush=True)
-        else:
-            print("not solved, maybe invalid hash?")
-        return
-    print(f"using {processes_count} processes")
-    queue = multiprocessing.Queue()  # stores running process ids to be killed when a process finds the solution
-    exit_code = multiprocessing.Queue()  # to send exit code to main process
-    queue.put((
-        np.zeros(shape=(len(rows_sums), len(col_sums)), dtype=int),  # initial matrix
-        0,  # start from row 0
-        0,  # and column 0
-        np.copy(rows_sums),
-        np.copy(col_sums),
-    ))
-    processes = []
-    for i in range(processes_count):
-        processes.append(multiprocessing.Process(target=parallel_solve, args=(i, queue, exit_code, len(rows_sums), len(col_sums), bytes.fromhex(matrix_hash))))
-        processes[i].start()
-    if 0 != exit_code.get():
-        print("not solved, maybe invalid hash?")
-    for i in range(len(processes)):
-        try:
-            processes[i].kill()
-        except:
-            pass
-    print(f"controller process ended after {timer() - start}s")
+            rows_sums,
+            col_sums
+        ), dest=d, tag=TAG_TASK)
+    t = threading.Thread(target=worker_thread, args=(len(rows_sums), len(col_sums), bytes.fromhex(matrix_hash)))
+    t.daemon = True
+    t.start()
+    req = comm.irecv(tag=TAG_EXIT)
+    while not req.Test() and not stop.is_set():
+        time.sleep(.2)
+        pass
 
-
-# print(f"process {pid} started")
-if __name__ == '__main__':
-    main()
-    # print("program done", flush=True)
+main()
+# if rank == 0:
+#     comm.send((
+#         np.zeros(shape=(3, 3), dtype=int),  # initial matrix
+#         0,  # start from row 0
+#         0,  # and column 0
+#         np.array([1, 2]),
+#         np.array([1, 2])
+#     ), dest=1, tag=TAG_TASK)
+# else:
+#     def r():
+#         print(comm.recv(tag=TAG_TASK))
+#     threading.Thread(target=r).start()
+#     # print("program done", flush=True)
