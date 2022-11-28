@@ -53,6 +53,9 @@
         "thread": "cpp",
         "condition_variable": "cpp",
         "mutex": "cpp",
-        "shared_mutex": "cpp"
+        "shared_mutex": "cpp",
+        "*.ipp": "cpp",
+        "bitset": "cpp",
+        "list": "cpp"
     }
 }

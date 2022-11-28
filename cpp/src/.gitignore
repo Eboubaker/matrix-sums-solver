@@ -1,0 +1,6 @@
+/**/*.o
+/**/*.d
+generator/generator
+solver/solver
+hash/hash
+test/test

@@ -1,9 +1,9 @@
-BINARY=test
+BINARY=hash
 CODEDIRS=. ../lib
-INCDIRS=. ../include/ /usr/include/x86_64-linux-gnu/mpich/ # can be list
+INCDIRS=. ../include/ # can be list
 
-CC=mpic++
-OPT=-O0
+CC=g++
+OPT=-O3
 # generate files that encode make rules for the .h dependencies
 DEPFLAGS=-MP -MD
 # automatically add the -I onto each include directory
@@ -28,19 +28,8 @@ $(BINARY): $(OBJECTS)
 clean:
 	rm -rf $(BINARY) $(OBJECTS) $(DEPFILES)
 
-# shell commands are a set of keystrokes away
-distribute: clean
-	tar zcvf dist.tgz *
-
-# @ silences the printing of the command
-# $(info ...) prints output
-diff:
-	$(info The status of the repository, and the volume of per-file changes:)
-	@git status
-	@git diff --stat
-
 # include the dependencies
 -include $(DEPFILES)
 
 # add .PHONY so that the non-targetfile - rules work even if a file with the same name exists.
-.PHONY: all clean distribute diff
+.PHONY: all clean

@@ -1,19 +1,19 @@
-SUBDIRS=solver generator hash test
+EXECS=solver generator hash test
 
 define FOREACH
-    for DIR in $(SUBDIRS); do \
-        $(MAKE) -C $$DIR $(1); \
+    for DIR in $(EXECS); do \
+        $(MAKE) -C src/$$DIR $(1); \
     done
 endef
 
-all: $(SUBDIRS)
+all: $(EXECS)
 
-$(SUBDIRS):
-	$(MAKE) -C $@
-
+$(EXECS):
+	$(MAKE) -C src/$@
+	cp ./src/$@/$@ ./
 clean:
 	$(call FOREACH,clean)
-
+	rm -f $(EXECS) 
 # shell commands are a set of keystrokes away
 distribute: clean
 	tar zcvf dist.tgz *
@@ -25,4 +25,4 @@ diff:
 	@git status
 	@git diff --stat
 
-.PHONY: all $(SUBDIRS)
+.PHONY: all $(EXECS)

@@ -16,11 +16,11 @@ bool hash_eq(const unsigned char *dgst1, const unsigned char *dgst2, size_t size
             return false;
     return true;
 }
-std::string int_lst_str(int *ints, size_t size)
+std::string int_lst_str(int *ints, int count)
 {
     std::stringstream ss;
     ss << "[";
-    for (size_t i = 0; i < size; i++)
+    for (int i = 0; i < count; i++)
     {
         if (i != 0)
         {
@@ -41,6 +41,7 @@ bool exists(int n, int *ints, size_t size)
     return false;
 }
 
+// logical cores
 int get_num_cores()
 {
 #ifdef WIN32
@@ -132,4 +133,19 @@ int idxtorow(int index, int nb_cols){
 int idxtocol(int index, int nb_cols)
 {
     return index % nb_cols;
+}
+
+std::vector<char> string_to_char(const std::vector<std::string> &strings)
+{
+    std::vector<char> cstrings;
+    cstrings.reserve(strings.size());
+    for (std::string s : strings)
+    {
+        for (size_t i = 0; i < strlen(s.c_str()); ++i)
+        {
+            cstrings.push_back(s.c_str()[i]);
+        }
+    }
+
+    return cstrings;
 }
