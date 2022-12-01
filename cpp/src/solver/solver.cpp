@@ -161,45 +161,44 @@ t_cell *solve_recursive(t_cell *m, int size, int nb_rows, int nb_cols, int s, t_
         row = i / nb_cols;
         col = i % nb_cols;
 
-        if (row_sums[row] == 0 || col_sums[col] == 0 || (count_non_zero(col_sums, col, nb_cols) > row_sums[row] && count_non_zero(row_sums, row, nb_rows) > col_sums[col]))
+        if (row_sums[row] == 0 || col_sums[col] == 0)
+            continue;
+        if (count_non_zero(col_sums, col, nb_cols) > row_sums[row] && count_non_zero(row_sums, row, nb_rows) > col_sums[col])
         {
-            if (col_sums[col] != 0 && row_sums[row] != 0)
-            {
-                WorkSection ws;
-                ws.matrix = mtrx_mk(size);
-                ws.row_sums = (t_cell_sum *)malloc(sizeof(t_cell_sum) * nb_rows);
-                ws.col_sums = (t_cell_sum *)malloc(sizeof(t_cell_sum) * nb_cols);
-                copy(m, m + size, ws.matrix);
-                copy(row_sums, row_sums + nb_rows, ws.row_sums);
-                copy(col_sums, col_sums + nb_cols, ws.col_sums);
+            WorkSection ws;
+            ws.matrix = mtrx_mk(size);
+            ws.row_sums = (t_cell_sum *)malloc(sizeof(t_cell_sum) * nb_rows);
+            ws.col_sums = (t_cell_sum *)malloc(sizeof(t_cell_sum) * nb_cols);
+            copy(m, m + size, ws.matrix);
+            copy(row_sums, row_sums + nb_rows, ws.row_sums);
+            copy(col_sums, col_sums + nb_cols, ws.col_sums);
 
-                ws.matrix[i] = 1;
-                ws.offset = i + 1;
-                ws.row_sums[row]--;
-                ws.col_sums[col]--;
-                if (row == 0)
+            ws.matrix[i] = 1;
+            ws.offset = i + 1;
+            ws.row_sums[row]--;
+            ws.col_sums[col]--;
+            if (i * 1.0f / size < .2) // naive approach to balance the workload, only send before we reach 20%
+            {
+                int *data = WorkSection_pack(ws, nb_rows, nb_cols);
+                // int dest = other_ranks[rand() % (Size - 1)]; // random rank
+                int dest = pick_send_task_rank();
+                // cout << "Rank " << Rank << " Sending to " << dest << " " << int_lst_str(ws.matrix, size) << endl;
+                // cout << "put" << endlrank;
+                MPI_Send(data, WorkSection_ints, MPI_INT, dest, TAG_TASK, MPI_COMM_WORLD);
+                free(data);
+                free(ws.matrix);
+                // ws.matrix = NULL;
+                free(ws.row_sums);
+                // ws.row_sums = NULL;
+                free(ws.col_sums);
+                // ws.col_sums = NULL;
+            }
+            else
+            {
+                auto m = solve_recursive(ws.matrix, size, nb_rows, nb_cols, ws.offset, ws.row_sums, ws.col_sums, hash);
+                if (m != NULL)
                 {
-                    int *data = WorkSection_pack(ws, nb_rows, nb_cols);
-                    // int dest = other_ranks[rand() % (Size - 1)]; // random rank
-                    int dest = pick_send_task_rank();
-                    // cout << "Rank " << Rank << " Sending to " << dest << " " << int_lst_str(ws.matrix, size) << endl;
-                    // cout << "put" << endlrank;
-                    MPI_Send(data, WorkSection_ints, MPI_INT, dest, TAG_TASK, MPI_COMM_WORLD);
-                    free(data);
-                    free(ws.matrix);
-                    // ws.matrix = NULL;
-                    free(ws.row_sums);
-                    // ws.row_sums = NULL;
-                    free(ws.col_sums);
-                    // ws.col_sums = NULL;
-                }
-                else
-                {
-                    auto m = solve_recursive(ws.matrix, size, nb_rows, nb_cols, ws.offset, ws.row_sums, ws.col_sums, hash);
-                    if (m != NULL)
-                    {
-                        return m;
-                    }
+                    return m;
                 }
             }
         }
