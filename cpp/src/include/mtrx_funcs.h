@@ -1,8 +1,8 @@
 #include <string>
 #include "openssl/md5.h"
 
-typedef int t_cell;
-typedef int t_cell_sum;
+typedef bool t_cell;
+typedef unsigned short t_cell_sum;
 
 const unsigned char *mtrx_md5dgst(t_cell *m, int size);
 void mtrx_rnd(t_cell *m, int size);
@@ -18,3 +18,4 @@ t_cell_sum mtrx_sum_col(t_cell *m, int col, int nb_rows, int nb_cols);
 t_cell_sum *mtrx_sum_cols(t_cell *m, int nb_rows, int nb_cols);
 t_cell_sum *mtrx_sum_rows(t_cell *m, int nb_rows, int nb_cols);
 std::string mtrx_str(t_cell *m, int nb_rows, int nb_cols);
+std::string sums_str(t_cell_sum *sums, int count);

@@ -21,8 +21,8 @@ int main(int argc, char **argv)
         std::cout << mtrx_str(m, nb_rows, nb_cols) << std::endl;
     }
 
-    std::cout << int_lst_str(mtrx_sum_rows(m, nb_rows, nb_cols), nb_rows) << " "
-              << int_lst_str(mtrx_sum_cols(m, nb_rows, nb_cols), nb_cols) << " "
+    std::cout << sums_str(mtrx_sum_rows(m, nb_rows, nb_cols), nb_rows) << " "
+              << sums_str(mtrx_sum_cols(m, nb_rows, nb_cols), nb_cols) << " "
               << dgsttohex(mtrx_md5dgst(m, mtrx_s), MD5_DIGEST_LENGTH) << " "
               << seed
               << std::endl;

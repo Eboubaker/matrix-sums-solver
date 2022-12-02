@@ -16,25 +16,10 @@ bool hash_eq(const unsigned char *dgst1, const unsigned char *dgst2, size_t size
             return false;
     return true;
 }
-std::string int_lst_str(int *ints, int count)
-{
-    std::stringstream ss;
-    ss << "[";
-    for (int i = 0; i < count; i++)
-    {
-        if (i != 0)
-        {
-            ss << ",";
-        }
-        ss << ints[i];
-    }
-    ss << "]";
-    return ss.str();
-}
 
 bool exists(int n, int *ints, size_t size)
 {
-    //std::cout << "exists req: " << n << ": " << int_lst_str(ints, size) << std::endl;
+    //std::cout << "exists req: " << n << ": " << sums_str(ints, size) << std::endl;
     for (size_t i = 0; i < size; i++)
         if (ints[i] == n)
             return true;

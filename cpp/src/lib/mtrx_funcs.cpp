@@ -84,8 +84,8 @@ void mtrx_rnd(t_cell *m, int size)
 
 t_cell *mtrx_chnk(t_cell *m, int *row_chunks, int *col_chunks, int nb_rows, int nb_cols, int new_nb_rows, int new_nb_cols)
 {
-    // std::cout << "col chunks: " << new_nb_cols << ":" << int_lst_str(col_chunks, new_nb_cols) << std::endl;
-    // std::cout << "row chunks: " << new_nb_rows << ":" << int_lst_str(row_chunks, new_nb_rows) << std::endl;
+    // std::cout << "col chunks: " << new_nb_cols << ":" << sums_str(col_chunks, new_nb_cols) << std::endl;
+    // std::cout << "row chunks: " << new_nb_rows << ":" << sums_str(row_chunks, new_nb_rows) << std::endl;
     // std::cout << "matrix " << mtrx_str(m, nb_rows, nb_cols) << std::endl;
     t_cell *new_matrix = (t_cell *)malloc(sizeof(t_cell ) * new_nb_rows * new_nb_cols);
     int nrow = 0, ncol = 0;
@@ -149,4 +149,20 @@ t_cell_sum mtrx_sum_col(t_cell *m, int col, int nb_rows, int nb_cols)
         sum += m[col + row * nb_cols];
     }
     return sum;
+}
+
+std::string sums_str(t_cell_sum *sums, int count)
+{
+    std::stringstream ss;
+    ss << "[";
+    for (int i = 0; i < count; i++)
+    {
+        if (i != 0)
+        {
+            ss << ",";
+        }
+        ss << (int)sums[i];
+    }
+    ss << "]";
+    return ss.str();
 }

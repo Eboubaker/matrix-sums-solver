@@ -121,7 +121,7 @@ t_cell *solve_recursive_wthreading(t_cell *m, int size, int nb_rows, int nb_cols
                     int *data = WorkSection_pack(*ws, nb_rows, nb_cols);
                     // int dest = other_ranks[rand() % (Size - 1)]; // random rank
                     int dest = pick_send_task_rank();
-                    // cout << "Rank " << Rank << " Sending to " << dest << " " << int_lst_str(ws.matrix, size) << endl;
+                    // cout << "Rank " << Rank << " Sending to " << dest << " " << sums_str(ws.matrix, size) << endl;
                     // cout << "put" << endlrank;
                     MPI_Send(data, WorkSection_ints, MPI_INT, dest, TAG_TASK, MPI_COMM_WORLD);
                     free(data);
@@ -145,7 +145,7 @@ t_cell *solve_recursive_wthreading(t_cell *m, int size, int nb_rows, int nb_cols
         }
     }
 
-    // cout << "Rank " << Rank << " checking " << int_lst_str(m, size) << endl;
+    // cout << "Rank " << Rank << " checking " << sums_str(m, size) << endl;
 
     if (hash_eq(mtrx_md5dgst(m, size), hash, MD5_DIGEST_LENGTH))
         return mtrx_clone(m, size);
@@ -182,7 +182,7 @@ t_cell *solve_recursive(t_cell *m, int size, int nb_rows, int nb_cols, int s, t_
                 int *data = WorkSection_pack(ws, nb_rows, nb_cols);
                 // int dest = other_ranks[rand() % (Size - 1)]; // random rank
                 int dest = pick_send_task_rank();
-                // cout << "Rank " << Rank << " Sending to " << dest << " " << int_lst_str(ws.matrix, size) << endl;
+                // cout << "Rank " << Rank << " Sending to " << dest << " " << sums_str(ws.matrix, size) << endl;
                 // cout << "put" << endlrank;
                 MPI_Send(data, WorkSection_ints, MPI_INT, dest, TAG_TASK, MPI_COMM_WORLD);
                 free(data);
@@ -210,7 +210,7 @@ t_cell *solve_recursive(t_cell *m, int size, int nb_rows, int nb_cols, int s, t_
         }
     }
 
-    // cout << "Rank " << Rank << " checking " << int_lst_str(m, size) << endl;
+    // cout << "Rank " << Rank << " checking " << sums_str(m, size) << endl;
 
     if (hash_eq(mtrx_md5dgst(m, size), hash, MD5_DIGEST_LENGTH))
         return mtrx_clone(m, size);
@@ -260,12 +260,12 @@ void parallel_solve_wthreading(int nb_rows, int nb_cols, const unsigned char *ha
         free(ws->matrix);
         // ws->matrix = NULL;
         // if (Rank == 0)
-        //     cout << "FREE2 " <<  ws->row_sums  << "->" << ws->row_sums + nb_rows << " "  << int_lst_str(ws->row_sums, nb_cols) << wexecutor;
+        //     cout << "FREE2 " <<  ws->row_sums  << "->" << ws->row_sums + nb_rows << " "  << sums_str(ws->row_sums, nb_cols) << wexecutor;
 
         // free(ws->row_sums);
         // ws->row_sums = NULL;
         // if (Rank == 0)
-        //     cout << "FREE3 " << int_lst_str(ws->col_sums, nb_cols) << wexecutor;
+        //     cout << "FREE3 " << sums_str(ws->col_sums, nb_cols) << wexecutor;
         // free(ws->col_sums);
         // ws->col_sums = NULL;
         // if (Rank == 0)
@@ -311,7 +311,7 @@ void parallel_solve(int nb_rows, int nb_cols, const unsigned char *hashdigest)
         // }
         WorkSection *ws = WorkSection_unpack(recv, nb_rows, nb_cols);
 
-        // cout << "Rank " << Rank << " Recivied from " << status.MPI_SOURCE << " " << int_lst_str(ws->matrix, size) << endl;
+        // cout << "Rank " << Rank << " Recivied from " << status.MPI_SOURCE << " " << sums_str(ws->matrix, size) << endl;
         free(recv);
         // #print(f "{rank} got new task")
         auto m = solve_recursive(ws->matrix, size, nb_rows, nb_cols, ws->offset, ws->row_sums, ws->col_sums, hashdigest);
@@ -438,11 +438,11 @@ int main(int argc, char **argv)
     unsigned char hexdgst[MD5_DIGEST_LENGTH];
     hextodgst(args[3].c_str(), hexdgst);
 
-    int row_sums[nb_rows], col_sums[nb_cols];
+    t_cell_sum row_sums[nb_rows], col_sums[nb_cols];
 
     for (size_t i = 0; i < strrows.size(); i++)
     {
-        row_sums[i] = stoi(strrows[i]);
+        row_sums[i] = (t_cell_sum)stoi(strrows[i]);
     }
 
     for (size_t i = 0; i < strcols.size(); i++)
@@ -453,7 +453,7 @@ int main(int argc, char **argv)
         // cout << "convert: " << strcols[i] << endlrank;
         // cout << "start: " << strcols[i] << endlrank;
         // }
-        col_sums[i] = stoi(strcols[i]);
+        col_sums[i] = (t_cell_sum)stoi(strcols[i]);
         // if (Rank == 1)
         // {
         // cout << "end: " << strcols[i] << endlrank;
@@ -487,8 +487,8 @@ int main(int argc, char **argv)
     if (Rank == 0)
     {
         cout << "solving input "
-             << int_lst_str(row_sums, nb_rows) << " "
-             << int_lst_str(col_sums, nb_cols) << " "
+             << sums_str(row_sums, nb_rows) << " "
+             << sums_str(col_sums, nb_cols) << " "
              << dgsttohex(hexdgst, MD5_DIGEST_LENGTH);
         if (seed != 0)
             cout << " " << seed;

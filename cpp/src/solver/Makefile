@@ -21,7 +21,7 @@ DEPFILES=$(patsubst %.cpp,%.d,$(CFILES))
 all: $(BINARY)
 
 $(BINARY): $(OBJECTS)
-	$(CC) -g -o $@ $^ -lcrypto -lpthread
+	$(CC) -o $@ $^ -lcrypto -lpthread
 
 # only want the .c file dependency here, thus $< instead of $^.
 #
