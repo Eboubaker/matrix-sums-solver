@@ -36,7 +36,8 @@ these inputs are then given to another program which will only know three things
 
 the program must solve all the posibilities and only return the valid matrix.  
 
-this repository has an implementation which can solve in complexcity of `O((R*C)*log(2^(R*C))))` best being `O(R*C)` and worst `O(2^(R*C))` in short `O(nlog(n))`
+this repository has an implementation which can solve in complexcity of `O((R*C)*log(2^(R*C))))` best being `O(R*C)` and worst `O(2^(R*C))` in short `O(nlog(n))`.  
+the program runs with parallelism to speed up the solving process using [MPI](https://en.wikipedia.org/wiki/Message_Passing_Interface).  
 
 python implementation will solve 6x6 matrix in ~2seconds.  
 c++ implementation will solve 40 times faster
