@@ -41,3 +41,6 @@ the program runs with parallelism to speed up the solving process using [MPI](ht
 
 python implementation will solve 6x6 matrix in ~2seconds.  
 c++ implementation will solve 40 times faster
+
+### Try Live
+run project in [google notebooks](https://colab.research.google.com/drive/1Wd9WUQ0RjNZmNG1D2JPholer28cMLBO7#scrollTo=CJKC0mbFdGDf)
