@@ -10,7 +10,7 @@ or just build and run on your main machine
 $ make
 ```
 > Requirements:  
-> g++ make libssl-dev openmpi-bin libopenmpi-dev libboost-all-dev
+> g++ make libssl-dev mpich libmpich-dev libboost-all-dev
 
 # Usage
 
