@@ -1,3 +1,5 @@
+This program is an implementation of a proof-of-work algorithm concept which can be used in blockchain. I did not make the concept but I made the best algorithm to solve it in a very fast time.
+
 # Problem
 Suppose you have a matrix of given shape RxC where `R=number of rows` and `C=number of columns` each cell can have two possible values `0` or `1`.
 ```
