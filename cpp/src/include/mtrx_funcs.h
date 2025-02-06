@@ -6,7 +6,9 @@ typedef unsigned short t_cell_sum;
 
 const unsigned char *mtrx_md5dgst(t_cell *m, int size);
 void mtrx_rnd(t_cell *m, int size);
+void mtrx_rnd(t_cell *m, int size, float fill_factor);
 t_cell cell_rnd();
+t_cell cell_rnd(float fill_factor);
 t_cell *cell_mk(t_cell value);
 t_cell *mtrx_clone(t_cell *m, int size);
 

@@ -1,10 +1,19 @@
 #include "generator.h"
 int main(int argc, char **argv)
 {
-    uint32_t seed;
+    float fill_factor;
     if (argc > 3)
     {
-        seed = std::stol(argv[3]);
+        fill_factor = std::stof(argv[3]);
+    }
+    else
+    {
+        fill_factor = 0.5f;
+    }
+    uint32_t seed;
+    if (argc > 4)
+    {
+        seed = std::stol(argv[4]);
     }
     else
     {
@@ -15,7 +24,7 @@ int main(int argc, char **argv)
     int nb_cols = std::stoi(argv[2]);
     int mtrx_s = nb_rows * nb_cols;
     t_cell m[mtrx_s];
-    mtrx_rnd(m, mtrx_s);
+    mtrx_rnd(m, mtrx_s, fill_factor);
     if (argc > 4)
     {
         std::cout << mtrx_str(m, nb_rows, nb_cols) << std::endl;

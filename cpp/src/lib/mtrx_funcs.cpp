@@ -64,6 +64,11 @@ t_cell cell_rnd()
 {
     return rand() % 2;
 }
+
+t_cell cell_rnd(float fill_factor)
+{
+    return (float)rand() / (float)RAND_MAX < fill_factor;
+}
 t_cell *mtrx_clone(t_cell *m, int size)
 {
     t_cell *matrix = mtrx_mk(size);
@@ -79,6 +84,13 @@ void mtrx_rnd(t_cell *m, int size)
     for (int i = 0; i < size; i++)
     {
         m[i] = cell_rnd();
+    }
+}
+void mtrx_rnd(t_cell *m, int size, float fill_factor)
+{
+    for (int i = 0; i < size; i++)
+    {
+        m[i] = cell_rnd(fill_factor);
     }
 }
 
